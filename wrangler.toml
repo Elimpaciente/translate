@@ -1,4 +1,4 @@
-name = "translate-api"
+name = "aver"
 main = "Translate.js"
 compatibility_date = "2024-01-01"
 
