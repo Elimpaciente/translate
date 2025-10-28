@@ -1,0 +1,6 @@
+name = "translate-api"
+main = "translate.js"
+compatibility_date = "2024-01-01"
+
+# Habilitar Workers en subdominio workers.dev (GRATIS)
+workers_dev = true
