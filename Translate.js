@@ -35,18 +35,9 @@ async function handleRequest(request) {
     })
   }
   
-  // Validar longitud del texto
-  if (text.length > 5000) {
-    return new Response(JSON.stringify({
-      status_code: 400,
-      message: 'Text exceeds the 5000 character limit',
-      developer: 'El Impaciente',
-      telegram_channel: 'https://t.me/Apisimpacientes'
-    }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    })
-  }
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Se eliminó el bloque de validación de 5000 caracteres
+  // --- FIN DE LA MODIFICACIÓN ---
   
   try {
     // Crear el prompt para traducir
@@ -66,7 +57,7 @@ async function handleRequest(request) {
     if (!response.ok) {
       return new Response(JSON.stringify({
         status_code: 400,
-        message: 'Error communicating with translation service',
+        message: 'Error al comunicarse con el servicio de traducción',
         developer: 'El Impaciente',
         telegram_channel: 'https://t.me/Apisimpacientes'
       }), {
@@ -81,7 +72,7 @@ async function handleRequest(request) {
     if (!cleanedTranslation) {
       return new Response(JSON.stringify({
         status_code: 400,
-        message: 'Could not get translation',
+        message: 'No se pudo obtener la traducción',
         developer: 'El Impaciente',
         telegram_channel: 'https://t.me/Apisimpacientes'
       }), {
@@ -90,11 +81,16 @@ async function handleRequest(request) {
       })
     }
     
-    // Respuesta exitosa: solo el texto traducido
-    return new Response(cleanedTranslation, {
-      status: 200,
+    // Respuesta exitosa: en formato JSON (esta parte ya tenía el status 200)
+    return new Response(JSON.stringify({
+      status_code: 200,
+      response: cleanedTranslation,
+      developer: 'El Impaciente',
+      telegram_channel: 'https://t.me/Apisimpacientes'
+    }), {
+      status: 200, // <-- Este es el status HTTP
       headers: { 
-        'Content-Type': 'text/plain; charset=utf-8',
+        'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=3600'
       }
     })
@@ -104,7 +100,7 @@ async function handleRequest(request) {
     
     return new Response(JSON.stringify({
       status_code: 400,
-      message: isTimeout ? 'Request timeout. Please try again.' : 'Error translating text. Please try again.',
+      message: isTimeout ? 'Tiempo de espera agotado. Intente nuevamente.' : 'Error al traducir el texto. Intente nuevamente.',
       developer: 'El Impaciente',
       telegram_channel: 'https://t.me/Apisimpacientes'
     }), {
