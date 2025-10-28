@@ -39,7 +39,7 @@ async function handleRequest(request) {
   if (text.length > 5000) {
     return new Response(JSON.stringify({
       status_code: 400,
-      message: 'El texto excede el límite de 5000 caracteres',
+      message: 'Text exceeds the 5000 character limit',
       developer: 'El Impaciente',
       telegram_channel: 'https://t.me/Apisimpacientes'
     }), {
@@ -66,7 +66,7 @@ async function handleRequest(request) {
     if (!response.ok) {
       return new Response(JSON.stringify({
         status_code: 400,
-        message: 'Error al comunicarse con el servicio de traducción',
+        message: 'Error communicating with translation service',
         developer: 'El Impaciente',
         telegram_channel: 'https://t.me/Apisimpacientes'
       }), {
@@ -81,7 +81,7 @@ async function handleRequest(request) {
     if (!cleanedTranslation) {
       return new Response(JSON.stringify({
         status_code: 400,
-        message: 'No se pudo obtener la traducción',
+        message: 'Could not get translation',
         developer: 'El Impaciente',
         telegram_channel: 'https://t.me/Apisimpacientes'
       }), {
@@ -104,7 +104,7 @@ async function handleRequest(request) {
     
     return new Response(JSON.stringify({
       status_code: 400,
-      message: isTimeout ? 'Tiempo de espera agotado. Intente nuevamente.' : 'Error al traducir el texto. Intente nuevamente.',
+      message: isTimeout ? 'Request timeout. Please try again.' : 'Error translating text. Please try again.',
       developer: 'El Impaciente',
       telegram_channel: 'https://t.me/Apisimpacientes'
     }), {
