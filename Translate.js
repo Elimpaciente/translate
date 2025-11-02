@@ -33,15 +33,43 @@ async function handleRequest(request) {
   }
   
   try {
-    const message = `You are a translation machine. Translate to ${language}. Output only the translated text, nothing else. No explanations. No markdown. No quotes. Just the translation:\n\n${text}`
+    const langMap = {
+      'spanish': 'es',
+      'español': 'es',
+      'english': 'en',
+      'inglés': 'en',
+      'french': 'fr',
+      'francés': 'fr',
+      'german': 'de',
+      'alemán': 'de',
+      'italian': 'it',
+      'italiano': 'it',
+      'portuguese': 'pt',
+      'portugués': 'pt',
+      'russian': 'ru',
+      'ruso': 'ru',
+      'japanese': 'ja',
+      'japonés': 'ja',
+      'chinese': 'zh',
+      'chino': 'zh',
+      'arabic': 'ar',
+      'árabe': 'ar'
+    }
     
-    const sonarUrl = `https://perplex-city.vercel.app/search?message=${encodeURIComponent(message)}`
+    const targetLang = langMap[language.toLowerCase()] || language.toLowerCase().slice(0, 2)
     
-    const response = await fetch(sonarUrl, {
-      method: 'GET',
+    const response = await fetch('https://libretranslate.com/translate', {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
+      body: JSON.stringify({
+        q: text,
+        source: 'auto',
+        target: targetLang,
+        format: 'text'
+      }),
       signal: AbortSignal.timeout(30000)
     })
     
@@ -59,7 +87,7 @@ async function handleRequest(request) {
     
     const data = await response.json()
     
-    if (!data.response || data.response.trim() === '') {
+    if (!data.translatedText || data.translatedText.trim() === '') {
       return new Response(JSON.stringify({
         status_code: 400,
         message: 'No se pudo obtener la traducción',
@@ -71,14 +99,9 @@ async function handleRequest(request) {
       })
     }
     
-    let cleanedResponse = data.response.trim()
-    cleanedResponse = cleanedResponse.replace(/^\*\*|\*\*$/g, '')
-    cleanedResponse = cleanedResponse.replace(/^["']|["']$/g, '')
-    cleanedResponse = cleanedResponse.split('\n')[0]
-    
     return new Response(JSON.stringify({
       status_code: 200,
-      response: cleanedResponse,
+      response: data.translatedText.trim(),
       developer: 'El Impaciente',
       telegram_channel: 'https://t.me/Apisimpacientes'
     }), {
