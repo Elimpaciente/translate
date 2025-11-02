@@ -33,7 +33,7 @@ async function handleRequest(request) {
   }
   
   try {
-    const message = `Translate this text to ${language}. Respond ONLY with the direct translation, no explanations, no formatting, no additional text:\n\n${text}`
+    const message = `You are a translation machine. Translate to ${language}. Output only the translated text, nothing else. No explanations. No markdown. No quotes. Just the translation:\n\n${text}`
     
     const sonarUrl = `https://perplex-city.vercel.app/search?message=${encodeURIComponent(message)}`
     
@@ -71,9 +71,14 @@ async function handleRequest(request) {
       })
     }
     
+    let cleanedResponse = data.response.trim()
+    cleanedResponse = cleanedResponse.replace(/^\*\*|\*\*$/g, '')
+    cleanedResponse = cleanedResponse.replace(/^["']|["']$/g, '')
+    cleanedResponse = cleanedResponse.split('\n')[0]
+    
     return new Response(JSON.stringify({
       status_code: 200,
-      response: data.response.trim(),
+      response: cleanedResponse,
       developer: 'El Impaciente',
       telegram_channel: 'https://t.me/Apisimpacientes'
     }), {
