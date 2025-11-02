@@ -33,43 +33,15 @@ async function handleRequest(request) {
   }
   
   try {
-    const langMap = {
-      'spanish': 'es',
-      'español': 'es',
-      'english': 'en',
-      'inglés': 'en',
-      'french': 'fr',
-      'francés': 'fr',
-      'german': 'de',
-      'alemán': 'de',
-      'italian': 'it',
-      'italiano': 'it',
-      'portuguese': 'pt',
-      'portugués': 'pt',
-      'russian': 'ru',
-      'ruso': 'ru',
-      'japanese': 'ja',
-      'japonés': 'ja',
-      'chinese': 'zh',
-      'chino': 'zh',
-      'arabic': 'ar',
-      'árabe': 'ar'
-    }
+    const prompt = `Translate to ${language}. Output only the translated text, no explanations:\n\n${text}`
     
-    const targetLang = langMap[language.toLowerCase()] || language.toLowerCase().slice(0, 2)
+    const chatGPTUrl = `https://chat-gpt-six-tan.vercel.app/chat?text=${encodeURIComponent(prompt)}`
     
-    const response = await fetch('https://libretranslate.com/translate', {
-      method: 'POST',
+    const response = await fetch(chatGPTUrl, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({
-        q: text,
-        source: 'auto',
-        target: targetLang,
-        format: 'text'
-      }),
       signal: AbortSignal.timeout(30000)
     })
     
@@ -87,7 +59,7 @@ async function handleRequest(request) {
     
     const data = await response.json()
     
-    if (!data.translatedText || data.translatedText.trim() === '') {
+    if (!data.message || data.message.trim() === '') {
       return new Response(JSON.stringify({
         status_code: 400,
         message: 'No se pudo obtener la traducción',
@@ -99,9 +71,12 @@ async function handleRequest(request) {
       })
     }
     
+    let cleanedResponse = data.message.trim()
+    cleanedResponse = cleanedResponse.replace(/^["']|["']$/g, '')
+    
     return new Response(JSON.stringify({
       status_code: 200,
-      response: data.translatedText.trim(),
+      response: cleanedResponse,
       developer: 'El Impaciente',
       telegram_channel: 'https://t.me/Apisimpacientes'
     }), {
