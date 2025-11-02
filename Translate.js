@@ -33,11 +33,11 @@ async function handleRequest(request) {
   }
   
   try {
-    const message = `You are a translation machine. Translate to ${language}. Output only the translated text, nothing else. No explanations. No markdown. No quotes. Just the translation:\n\n${text}`
+    const prompt = `Translate to ${language}. Output only the translated text, no explanations:\n\n${text}`
     
-    const sonarUrl = `https://perplex-city.vercel.app/search?message=${encodeURIComponent(message)}`
+    const chatGPTUrl = `https://chat-gpt-six-tan.vercel.app/chat?text=${encodeURIComponent(prompt)}`
     
-    const response = await fetch(sonarUrl, {
+    const response = await fetch(chatGPTUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json'
@@ -59,7 +59,7 @@ async function handleRequest(request) {
     
     const data = await response.json()
     
-    if (!data.response || data.response.trim() === '') {
+    if (!data.message || data.message.trim() === '') {
       return new Response(JSON.stringify({
         status_code: 400,
         message: 'No se pudo obtener la traducción',
@@ -71,10 +71,8 @@ async function handleRequest(request) {
       })
     }
     
-    let cleanedResponse = data.response.trim()
-    cleanedResponse = cleanedResponse.replace(/^\*\*|\*\*$/g, '')
+    let cleanedResponse = data.message.trim()
     cleanedResponse = cleanedResponse.replace(/^["']|["']$/g, '')
-    cleanedResponse = cleanedResponse.split('\n')[0]
     
     return new Response(JSON.stringify({
       status_code: 200,
