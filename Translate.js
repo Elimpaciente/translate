@@ -33,15 +33,22 @@ async function handleRequest(request) {
   }
   
   try {
-    const prompt = `Translate to ${language}. Output only the translated text, no explanations:\n\n${text}`
+    const langMap = {
+      'spanish': 'es', 'español': 'es', 'english': 'en', 'inglés': 'en',
+      'french': 'fr', 'francés': 'fr', 'german': 'de', 'alemán': 'de',
+      'italian': 'it', 'italiano': 'it', 'portuguese': 'pt', 'portugués': 'pt',
+      'russian': 'ru', 'ruso': 'ru', 'japanese': 'ja', 'japonés': 'ja',
+      'chinese': 'zh-CN', 'chino': 'zh-CN', 'arabic': 'ar', 'árabe': 'ar',
+      'korean': 'ko', 'coreano': 'ko', 'hindi': 'hi', 'dutch': 'nl',
+      'holandés': 'nl', 'polish': 'pl', 'polaco': 'pl', 'turkish': 'tr', 'turco': 'tr'
+    }
     
-    const chatGPTUrl = `https://chat-gpt-six-tan.vercel.app/chat?text=${encodeURIComponent(prompt)}`
+    const targetLang = langMap[language.toLowerCase()] || language.toLowerCase().slice(0, 2)
+    const googleUrl = `https://translate.google.com/m?sl=auto&tl=${targetLang}&hl=${targetLang}&q=${encodeURIComponent(text)}`
     
-    const response = await fetch(chatGPTUrl, {
+    const response = await fetch(googleUrl, {
       method: 'GET',
-      headers: {
-        'Accept': 'application/json'
-      },
+      headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36' },
       signal: AbortSignal.timeout(30000)
     })
     
@@ -57,9 +64,10 @@ async function handleRequest(request) {
       })
     }
     
-    const data = await response.json()
+    const html = await response.text()
+    const resultMatch = html.match(/<div class="result-container">([^<]+)<\/div>/i)
     
-    if (!data.message || data.message.trim() === '') {
+    if (!resultMatch || !resultMatch[1]) {
       return new Response(JSON.stringify({
         status_code: 400,
         message: 'No se pudo obtener la traducción',
@@ -71,28 +79,20 @@ async function handleRequest(request) {
       })
     }
     
-    let cleanedResponse = data.message.trim()
-    cleanedResponse = cleanedResponse.replace(/^["']|["']$/g, '')
-    
     return new Response(JSON.stringify({
       status_code: 200,
-      response: cleanedResponse,
+      response: resultMatch[1].trim(),
       developer: 'El Impaciente',
       telegram_channel: 'https://t.me/Apisimpacientes'
     }), {
       status: 200,
-      headers: { 
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=3600'
-      }
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' }
     })
     
   } catch (error) {
-    const isTimeout = error.name === 'AbortError' || error.message.includes('timeout')
-    
     return new Response(JSON.stringify({
       status_code: 400,
-      message: isTimeout ? 'Tiempo de espera agotado. Intente nuevamente.' : 'Error al traducir el texto. Intente nuevamente.',
+      message: error.name === 'AbortError' ? 'Tiempo de espera agotado. Intente nuevamente.' : 'Error al traducir el texto. Intente nuevamente.',
       developer: 'El Impaciente',
       telegram_channel: 'https://t.me/Apisimpacientes'
     }), {
