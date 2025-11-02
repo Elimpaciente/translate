@@ -5,6 +5,7 @@ addEventListener('fetch', event => {
 async function handleRequest(request) {
   const url = new URL(request.url)
   
+  // Solo aceptar GET requests
   if (request.method !== 'GET') {
     return new Response(JSON.stringify({
       status_code: 400,
@@ -17,9 +18,11 @@ async function handleRequest(request) {
     })
   }
   
+  // Obtener parámetros
   const language = url.searchParams.get('language')
   const text = url.searchParams.get('text')
   
+  // Validar parámetros
   if (!language || !text || language.trim() === '' || text.trim() === '') {
     return new Response(JSON.stringify({
       status_code: 400,
@@ -32,23 +35,22 @@ async function handleRequest(request) {
     })
   }
   
+  // --- INICIO DE LA MODIFICACIÓN ---
+  // Se eliminó el bloque de validación de 5000 caracteres
+  // --- FIN DE LA MODIFICACIÓN ---
+  
   try {
-    const langMap = {
-      'spanish': 'es', 'español': 'es', 'english': 'en', 'inglés': 'en',
-      'french': 'fr', 'francés': 'fr', 'german': 'de', 'alemán': 'de',
-      'italian': 'it', 'italiano': 'it', 'portuguese': 'pt', 'portugués': 'pt',
-      'russian': 'ru', 'ruso': 'ru', 'japanese': 'ja', 'japonés': 'ja',
-      'chinese': 'zh-CN', 'chino': 'zh-CN', 'arabic': 'ar', 'árabe': 'ar',
-      'korean': 'ko', 'coreano': 'ko', 'hindi': 'hi', 'dutch': 'nl',
-      'holandés': 'nl', 'polish': 'pl', 'polaco': 'pl', 'turkish': 'tr', 'turco': 'tr'
-    }
+    // Crear el prompt para traducir
+    const prompt = `Translate the following text to ${language}. Only respond with the translation, nothing else:\n\n${text}`
     
-    const targetLang = langMap[language.toLowerCase()] || language.toLowerCase().slice(0, 2)
-    const googleUrl = `https://translate.google.com/m?sl=auto&tl=${targetLang}&hl=${targetLang}&q=${encodeURIComponent(text)}`
+    // Llamar a Pollinations.AI
+    const pollinationsUrl = `https://text.pollinations.ai/${encodeURIComponent(prompt)}`
     
-    const response = await fetch(googleUrl, {
+    const response = await fetch(pollinationsUrl, {
       method: 'GET',
-      headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36' },
+      headers: {
+        'Accept': 'text/plain'
+      },
       signal: AbortSignal.timeout(30000)
     })
     
@@ -64,10 +66,10 @@ async function handleRequest(request) {
       })
     }
     
-    const html = await response.text()
-    const resultMatch = html.match(/<div class="result-container">([^<]+)<\/div>/i)
+    const translation = await response.text()
+    const cleanedTranslation = translation.trim()
     
-    if (!resultMatch || !resultMatch[1]) {
+    if (!cleanedTranslation) {
       return new Response(JSON.stringify({
         status_code: 400,
         message: 'No se pudo obtener la traducción',
@@ -79,20 +81,26 @@ async function handleRequest(request) {
       })
     }
     
+    // Respuesta exitosa: en formato JSON (esta parte ya tenía el status 200)
     return new Response(JSON.stringify({
       status_code: 200,
-      response: resultMatch[1].trim(),
+      response: cleanedTranslation,
       developer: 'El Impaciente',
       telegram_channel: 'https://t.me/Apisimpacientes'
     }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' }
+      status: 200, // <-- Este es el status HTTP
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=3600'
+      }
     })
     
   } catch (error) {
+    const isTimeout = error.name === 'AbortError' || error.message.includes('timeout')
+    
     return new Response(JSON.stringify({
       status_code: 400,
-      message: error.name === 'AbortError' ? 'Tiempo de espera agotado. Intente nuevamente.' : 'Error al traducir el texto. Intente nuevamente.',
+      message: isTimeout ? 'Tiempo de espera agotado. Intente nuevamente.' : 'Error al traducir el texto. Intente nuevamente.',
       developer: 'El Impaciente',
       telegram_channel: 'https://t.me/Apisimpacientes'
     }), {
