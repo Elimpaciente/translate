@@ -33,7 +33,7 @@ async function handleRequest(request) {
   }
   
   try {
-    const message = `Translate the following text to ${language}. Only respond with the translation, nothing else:\n\n${text}`
+    const message = `Translate this text to ${language}. Respond ONLY with the direct translation, no explanations, no formatting, no additional text:\n\n${text}`
     
     const sonarUrl = `https://perplex-city.vercel.app/search?message=${encodeURIComponent(message)}`
     
