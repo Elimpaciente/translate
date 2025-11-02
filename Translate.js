@@ -5,7 +5,6 @@ addEventListener('fetch', event => {
 async function handleRequest(request) {
   const url = new URL(request.url)
   
-  // Solo aceptar GET requests
   if (request.method !== 'GET') {
     return new Response(JSON.stringify({
       status_code: 400,
@@ -18,11 +17,9 @@ async function handleRequest(request) {
     })
   }
   
-  // Obtener parámetros
   const language = url.searchParams.get('language')
   const text = url.searchParams.get('text')
   
-  // Validar parámetros
   if (!language || !text || language.trim() === '' || text.trim() === '') {
     return new Response(JSON.stringify({
       status_code: 400,
@@ -35,21 +32,15 @@ async function handleRequest(request) {
     })
   }
   
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Se eliminó el bloque de validación de 5000 caracteres
-  // --- FIN DE LA MODIFICACIÓN ---
-  
   try {
-    // Crear el prompt para traducir
-    const prompt = `Translate the following text to ${language}. Only respond with the translation, nothing else:\n\n${text}`
+    const message = `Translate the following text to ${language}. Only respond with the translation, nothing else:\n\n${text}`
     
-    // Llamar a Pollinations.AI
-    const pollinationsUrl = `https://text.pollinations.ai/${encodeURIComponent(prompt)}`
+    const sonarUrl = `https://perplex-city.vercel.app/search?message=${encodeURIComponent(message)}`
     
-    const response = await fetch(pollinationsUrl, {
+    const response = await fetch(sonarUrl, {
       method: 'GET',
       headers: {
-        'Accept': 'text/plain'
+        'Accept': 'application/json'
       },
       signal: AbortSignal.timeout(30000)
     })
@@ -66,10 +57,9 @@ async function handleRequest(request) {
       })
     }
     
-    const translation = await response.text()
-    const cleanedTranslation = translation.trim()
+    const data = await response.json()
     
-    if (!cleanedTranslation) {
+    if (!data.response || data.response.trim() === '') {
       return new Response(JSON.stringify({
         status_code: 400,
         message: 'No se pudo obtener la traducción',
@@ -81,14 +71,13 @@ async function handleRequest(request) {
       })
     }
     
-    // Respuesta exitosa: en formato JSON (esta parte ya tenía el status 200)
     return new Response(JSON.stringify({
       status_code: 200,
-      response: cleanedTranslation,
+      response: data.response.trim(),
       developer: 'El Impaciente',
       telegram_channel: 'https://t.me/Apisimpacientes'
     }), {
-      status: 200, // <-- Este es el status HTTP
+      status: 200,
       headers: { 
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=3600'
