@@ -14,13 +14,18 @@ const CORS = {
 }
 
 async function handleRequest(request) {
+  const url = new URL(request.url)
+  
+  if (!url.pathname.startsWith('/translate')) {
+    return errorResponse('Endpoint not found. Use /translate', 404)
+  }
+
   if (request.method !== 'GET') {
     return errorResponse('Only GET requests are allowed', 400)
   }
 
-  const { searchParams } = new URL(request.url)
-  const language = searchParams.get('language')?.trim()
-  const text = searchParams.get('text')?.trim()
+  const language = url.searchParams.get('language')?.trim()
+  const text = url.searchParams.get('text')?.trim()
 
   if (!language || !text) {
     return errorResponse('The language and text parameters are required', 400)
@@ -40,7 +45,7 @@ async function handleRequest(request) {
 async function getTranslation(language, text) {
   const prompt = `Translate to ${language}. IMPORTANT: Return ONLY the direct translation with NO explanations, NO introductions, NO phrases like "Here is" or "The translation is". Just the translated text itself:\n\n${text}`
 
-  const response = await fetch(`https://mistral-ai.apisimpacientes.workers.dev/?message=${encodeURIComponent(prompt)}`, {
+  const response = await fetch(`https://mistral-ai.apisimpacientes.workers.dev/chat?message=${encodeURIComponent(prompt)}`, {
     headers: { 'Accept': 'application/json' },
     signal: AbortSignal.timeout(30000)
   })
