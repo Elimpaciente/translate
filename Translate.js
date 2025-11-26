@@ -46,7 +46,10 @@ async function getTranslation(language, text) {
   const prompt = `Translate to ${language}. IMPORTANT: Return ONLY the direct translation with NO explanations, NO introductions, NO phrases like "Here is" or "The translation is". Just the translated text itself:\n\n${text}`
 
   const response = await fetch(`https://gpt4.apisimpacientes.workers.dev/chat?message=${encodeURIComponent(prompt)}`, {
-    headers: { 'Accept': 'application/json' },
+    headers: { 
+      'Accept': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    },
     signal: AbortSignal.timeout(120000)
   })
 
@@ -54,16 +57,29 @@ async function getTranslation(language, text) {
     throw new Error(`API request failed: ${response.status}`)
   }
 
-  const data = await response.json()
+  // Intentar obtener como JSON primero
+  const contentType = response.headers.get('content-type')
+  let translatedText = ''
   
-  if (!data.response?.trim()) {
+  try {
+    const data = await response.json()
+    translatedText = data.response || data.message || ''
+  } catch (e) {
+    // Si falla el JSON, intentar como texto plano
+    translatedText = await response.text()
+  }
+  
+  if (!translatedText?.trim()) {
     throw new Error('No translation available')
   }
 
-  return data.response.trim()
+  // Limpiar la respuesta
+  return translatedText.trim()
     .replace(/^["']|["']$/g, '')
     .replace(/^(Here is the translation|The translation is|Translation|Translated text)[\s:]+/i, '')
     .replace(/^(Aquí está la traducción|La traducción es)[\s:]+/i, '')
+    .replace(/\\n/g, '\n')
+    .replace(/\\"/g, '"')
 }
 
 function errorResponse(message, status) {
