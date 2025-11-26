@@ -47,7 +47,7 @@ async function getTranslation(language, text) {
 
   const response = await fetch(`https://gpt4.apisimpacientes.workers.dev/chat?message=${encodeURIComponent(prompt)}`, {
     headers: { 'Accept': 'application/json' },
-    signal: AbortSignal.timeout(30000)
+    signal: AbortSignal.timeout(120000)
   })
 
   if (!response.ok) {
